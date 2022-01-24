@@ -19,37 +19,24 @@ namespace FaceGenerator.MachineLearning.Math
             }
         }
 
+        // столбцы меньше чем строки
+        //    k      <           m
+        // сначала по строкам, потом по столбцам
+
+        //Parallelize potential too
         public (Vector, SquareMatrix) EigenDecomposition()
         {
-            var n = Elements.Rows();
-            var nWithoutOne = n - 1;
-
             var triangle = Elements.LowerTriangle();
+            var rotationProduct = Idedntity(N);
+            double absMax;
 
-            // столбцы меньше чем строки
-            //    k      <           m
-            // сначала по строкам, потом по столбцам
-
-            //Parallelize potential too
-            var absMax = triangle
-                [MaxAmongAbsMaxes(rowMaxes, nWithoutOne) + 1]
-                [MaxAmongAbsMaxes(columnMaxes, nWithoutOne)];
-
-            var rotationProduct = new double[n][];
-            for (int i = 0; i < n; i++)
+            do
             {
-                rotationProduct[i] = new double[n];
-                rotationProduct[i][i] = 1;
-            }
-
-            while (absMax > 1E-02)
-            {
-                int m = MaxAmongAbsMaxes(rowMaxes, nWithoutOne) + 1; // row index
-                int k = MaxAmongAbsMaxes(columnMaxes, nWithoutOne); // column index
+                (int m, int k) = AbsMaxPosition(triangle);
                 double xkk = triangle[k][k];
-                absMax = triangle[m][k];
+                absMax = System.Math.Abs(triangle[m][k]);
 
-                double fi = Fi(absMax, k, m);
+                double fi = Fi(triangle, k, m);
                 double cosFi = System.Math.Cos(fi);
                 double sinFi = System.Math.Sin(fi);
 
@@ -68,26 +55,36 @@ namespace FaceGenerator.MachineLearning.Math
                     triangle[m][i] = (triangle[m][i] - triangle[i][k] * sinFi) / cosFi;
                 }
                 triangle[m][m] = xkk + triangle[m][m] - triangle[k][k];
-                for (int i = m + 1; i < n; i++)
+                for (int i = m + 1; i < N; i++)
                 {
                     triangle[i][k] = triangle[i][k] * cosFi + triangle[i][m] * sinFi;
                     triangle[i][m] = (triangle[i][m] - triangle[i][k] * sinFi) / cosFi;
                 }
 
-                for (int i = 0; i < n; i++)
+                for (int i = 0; i < N; i++)
                 {
                     rotationProduct[k][i] = rotationProduct[k][i] * cosFi + rotationProduct[m][i] * sinFi;
                     rotationProduct[m][i] = (rotationProduct[m][i] - rotationProduct[k][i] * sinFi) / cosFi;
                 }
             }
+            while (absMax > 1E-04);
 
-            var diagonalElements = new double[n];
-            for (int i = 0; i < n; i++)
+            var diagonalElements = new double[N];
+            for (int i = 0; i < N; i++)
             {
                 diagonalElements[i] = triangle[i][i];
             }
 
-            return (new Vector(diagonalElements), RotationProduct.Transpose());
+            var jaggedRotationProduct = new double[N, N];
+            for (int i = 0; i < N; i++)
+            {
+                for (int j = 0; j < N; j++)
+                {
+                    jaggedRotationProduct[i, j] = rotationProduct[j][i];
+                }
+            }
+
+            return (new Vector(diagonalElements), new SquareMatrix(jaggedRotationProduct));
         }
 
         public bool AssertEigenVector(Vector eigenVector, double eigenValue)
@@ -95,34 +92,34 @@ namespace FaceGenerator.MachineLearning.Math
             var mv = this * eigenVector;
             var lambdav = eigenValue * eigenVector;
 
-            return System.Math.Abs(lambdav.Length - mv.Length) <= 1e-03;
+            return System.Math.Abs(lambdav.Length - mv.Length) <= 1e-01;
         }
 
-        private (int, int) AbsMaxPosition(double[][] triangle, int n)
+        private (int, int) AbsMaxPosition(double[][] lowerTriangle)
         {
+            var absmax = System.Math.Abs(lowerTriangle[1][0]);
+            int maxI = 1, maxJ = 0;
 
-        }
-
-        private int MaxAmongAbsMaxes(double[] absMaxes, int nWithoutOne)
-        {
-            var absMax = absMaxes[0];
-            var maxI = 0;
-
-            for (int i = 1; i < nWithoutOne; i++)
+            for (int i = 2; i < N; i++)
             {
-                if (absMaxes[i] > absMax)
+                for (int j = 0; j < i; j++)
                 {
-                    absMax = absMaxes[i];
-                    maxI = i;
+                    var currentElement = System.Math.Abs(lowerTriangle[i][j]);
+                    if (currentElement > absmax)
+                    {
+                        maxI = i;
+                        maxJ = j;
+                        absmax = currentElement;
+                    }
                 }
             }
 
-            return maxI;
+            return (maxI, maxJ);
         }
 
-        private double Fi(double valueWithMaxAbs, int k, int m)
+        private double Fi(double[][] triangle, int k, int m)
         {
-            return 0.5 * System.Math.Atan2(2 * valueWithMaxAbs, Elements[k, k] - Elements[m, m]);
+            return 0.5 * System.Math.Atan2(2 * System.Math.Abs(triangle[m][k]), triangle[k][k] - triangle[m][m]);
         }
     }
 }

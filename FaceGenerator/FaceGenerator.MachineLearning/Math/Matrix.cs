@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Text;
 using System.Collections.Generic;
-using FaceGenerator.MachineLearning.Models;
 using FaceGenerator.MachineLearning.Extensions;
 using static FaceGenerator.MachineLearning.Helpers.NullCheckHelper;
-using FaceGenerator.MachineLearning.Threading;
 
 namespace FaceGenerator.MachineLearning.Math
 {
-    public class Matrix : BaseMatrix<int, double>
+    public class Matrix
     {
         protected double[,] Elements;
 
@@ -18,9 +16,9 @@ namespace FaceGenerator.MachineLearning.Math
             set => Elements[i, j] = value;
         }
 
-        public override int Rows => Elements.Rows();
+        public int Rows => Elements.Rows();
 
-        public override int Columns => Elements.Columns();
+        public int Columns => Elements.Columns();
 
         protected Matrix() { }
 
@@ -35,7 +33,7 @@ namespace FaceGenerator.MachineLearning.Math
             return new Matrix(ProductAsElements(m1, m2));
         }
 
-        public override Vector RowAt(int i)
+        public Vector RowAt(int i)
         {
             var row = new double[Columns];
 
@@ -47,7 +45,7 @@ namespace FaceGenerator.MachineLearning.Math
             return new Vector(row);
         }
 
-        public override Vector ColumnAt(int i)
+        public Vector ColumnAt(int i)
         {
             var column = new double[Rows];
 
@@ -64,15 +62,15 @@ namespace FaceGenerator.MachineLearning.Math
             return new Matrix(TransposedElements());
         }
 
-        public Vector[] AsRows()
+        public Vector[] AsColumns()
         {
-            var rows = new Vector[Rows];
-            for (int i = 0; i < Rows; i++)
+            var cols = new Vector[Columns];
+            for (int i = 0; i < Columns; i++)
             {
-                rows[i] = RowAt(i);
+                cols[i] = ColumnAt(i);
             }
 
-            return rows;
+            return cols;
         }
 
         public override string ToString()

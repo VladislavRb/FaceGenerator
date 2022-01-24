@@ -29,15 +29,16 @@ namespace FaceGenerator.MachineLearning.Math
             return new SquareMatrix(ProductAsElements(m1, m2));
         }
 
-        public static SquareMatrix Identity(int n)
+        public static double[][] Idedntity(int n)
         {
-            var elements = new double[n, n];
+            var identity = new double[n][];
             for (int i = 0; i < n; i++)
             {
-                elements[i, i] = 1;
+                identity[i] = new double[n];
+                identity[i][i] = 1;
             }
 
-            return new SquareMatrix(elements);
+            return identity;
         }
 
         public SymmetricMatrix AsSymmetric()

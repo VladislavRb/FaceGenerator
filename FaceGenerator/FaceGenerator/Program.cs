@@ -74,6 +74,27 @@ namespace FaceGenerator
             return new SymmetricMatrix(elements);
         }
 
+        private static SymmetricMatrix ExampleFourMatrix()
+        {
+            return new SymmetricMatrix(new double[,]
+            {
+                { 1, 1, -1, 4 },
+                { 1, 7, 3, 0},
+                { -1, 3, 0, 3},
+                { 4, 0, 3, -2}
+            });
+        }
+
+        private static SymmetricMatrix ExampleThreeMatrix()
+        {
+            return new SymmetricMatrix(new double[,]
+            {
+                { 5, 1, 2 },
+                { 1, 4, 1 },
+                { 2, 1, 3 }
+            });
+        }
+
         private static void ConcurrencyMatrixTest()
         {
             var matrix1 = GenerateMatrix(500, 300);
@@ -134,11 +155,12 @@ namespace FaceGenerator
 
         private static void EigenTest()
         {
-            var matrix = GenerateMatrix(30, 10);
+            // var matrix = GenerateMatrix(30, 10);
+            var matrix = ExampleFourMatrix();
 
             var eigenResult = matrix.EigenDecomposition();
             var eigenValues = eigenResult.Item1;
-            var eigenVectors = eigenResult.Item2.AsRows();
+            var eigenVectors = eigenResult.Item2.AsColumns();
 
             Console.WriteLine("Decomposition completed");
 
