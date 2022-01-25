@@ -1,5 +1,6 @@
 ﻿using FaceGenerator.MachineLearning.Extensions;
 using static FaceGenerator.MachineLearning.Helpers.NullCheckHelper;
+using static FaceGenerator.MachineLearning.Helpers.MathHelper;
 
 namespace FaceGenerator.MachineLearning.Math
 {
@@ -19,11 +20,6 @@ namespace FaceGenerator.MachineLearning.Math
             }
         }
 
-        // столбцы меньше чем строки
-        //    k      <           m
-        // сначала по строкам, потом по столбцам
-
-        //Parallelize potential too
         public (Vector, SquareMatrix) EigenDecomposition()
         {
             var triangle = Elements.LowerTriangle();
@@ -34,40 +30,56 @@ namespace FaceGenerator.MachineLearning.Math
             {
                 (int m, int k) = AbsMaxPosition(triangle);
                 double xkk = triangle[k][k];
-                absMax = System.Math.Abs(triangle[m][k]);
+                double xmk = triangle[m][k];
+                double xmm = triangle[m][m];
+                absMax = System.Math.Abs(xmk);
 
-                double fi = Fi(triangle, k, m);
-                double cosFi = System.Math.Cos(fi);
-                double sinFi = System.Math.Sin(fi);
+                (double sinFi, double cosFi) = SinAndCosFrom(xmk, xkk, xmm);
 
                 for (int i = 0; i < k; i++)
                 {
-                    triangle[k][i] = triangle[k][i] * cosFi + triangle[m][i] * sinFi;
-                    triangle[m][i] = (triangle[m][i] - triangle[k][i] * sinFi) / cosFi;
+                    double xki = triangle[k][i];
+                    double xmi = triangle[m][i];
+
+                    triangle[k][i] = xki * cosFi + xmi * sinFi;
+                    triangle[m][i] = -xki * sinFi + xmi * cosFi;
                 }
+
                 triangle[k][k] = xkk * cosFi * cosFi +
-                                 triangle[m][m] * sinFi * sinFi +
-                                 2 * absMax * sinFi * cosFi;
+                                 xmm * sinFi * sinFi +
+                                 2 * xmk * sinFi * cosFi;
                 triangle[m][k] = 0;
+                
                 for (int i = k + 1; i < m; i++)
                 {
-                    triangle[i][k] = triangle[i][k] * cosFi + triangle[m][i] * sinFi;
-                    triangle[m][i] = (triangle[m][i] - triangle[i][k] * sinFi) / cosFi;
+                    double xik = triangle[i][k];
+                    double xmi = triangle[m][i];
+
+                    triangle[i][k] = xik * cosFi + xmi * sinFi;
+                    triangle[m][i] = -xik * sinFi + xmi * cosFi;
                 }
-                triangle[m][m] = xkk + triangle[m][m] - triangle[k][k];
+
+                triangle[m][m] = xkk + xmm - triangle[k][k];
+                
                 for (int i = m + 1; i < N; i++)
                 {
-                    triangle[i][k] = triangle[i][k] * cosFi + triangle[i][m] * sinFi;
-                    triangle[i][m] = (triangle[i][m] - triangle[i][k] * sinFi) / cosFi;
+                    double xik = triangle[i][k];
+                    double xim = triangle[i][m];
+
+                    triangle[i][k] = xik * cosFi + xim * sinFi;
+                    triangle[i][m] = -xik * sinFi + xim * cosFi;
                 }
 
                 for (int i = 0; i < N; i++)
                 {
-                    rotationProduct[k][i] = rotationProduct[k][i] * cosFi + rotationProduct[m][i] * sinFi;
-                    rotationProduct[m][i] = (rotationProduct[m][i] - rotationProduct[k][i] * sinFi) / cosFi;
+                    double rik = rotationProduct[i][k];
+                    double rim = rotationProduct[i][m];
+
+                    rotationProduct[i][k] = rik * cosFi + rim * sinFi;
+                    rotationProduct[i][m] = -rik * sinFi + rim * cosFi;
                 }
             }
-            while (absMax > 1E-04);
+            while (absMax > 1E-02);
 
             var diagonalElements = new double[N];
             for (int i = 0; i < N; i++)
@@ -80,7 +92,7 @@ namespace FaceGenerator.MachineLearning.Math
             {
                 for (int j = 0; j < N; j++)
                 {
-                    jaggedRotationProduct[i, j] = rotationProduct[j][i];
+                    jaggedRotationProduct[i, j] = rotationProduct[i][j];
                 }
             }
 
@@ -90,9 +102,9 @@ namespace FaceGenerator.MachineLearning.Math
         public bool AssertEigenVector(Vector eigenVector, double eigenValue)
         {
             var mv = this * eigenVector;
-            var lambdav = eigenValue * eigenVector;
+            var lambdav = eigenVector * eigenValue;
 
-            return System.Math.Abs(lambdav.Length - mv.Length) <= 1e-01;
+            return System.Math.Abs(lambdav.Length - mv.Length) <= 1;
         }
 
         private (int, int) AbsMaxPosition(double[][] lowerTriangle)
@@ -115,11 +127,6 @@ namespace FaceGenerator.MachineLearning.Math
             }
 
             return (maxI, maxJ);
-        }
-
-        private double Fi(double[][] triangle, int k, int m)
-        {
-            return 0.5 * System.Math.Atan2(2 * System.Math.Abs(triangle[m][k]), triangle[k][k] - triangle[m][m]);
         }
     }
 }

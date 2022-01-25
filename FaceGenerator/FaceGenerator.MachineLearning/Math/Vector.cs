@@ -24,7 +24,7 @@ namespace FaceGenerator.MachineLearning.Math
             Size = _elements.Length;
         }
 
-        public static Vector operator *(double multiplier, Vector v)
+        public static Vector operator *(Vector v, double multiplier)
         {
             ThrowIfNull(v);
 
