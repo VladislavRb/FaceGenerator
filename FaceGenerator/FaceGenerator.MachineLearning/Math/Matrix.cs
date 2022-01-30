@@ -10,12 +10,6 @@ namespace FaceGenerator.MachineLearning.Math
     {
         protected double[,] Elements;
 
-        public double this[int i, int j]
-        {
-            get => Elements[i, j];
-            set => Elements[i, j] = value;
-        }
-
         public int Rows => Elements.Rows();
 
         public int Columns => Elements.Columns();

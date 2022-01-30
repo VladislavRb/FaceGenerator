@@ -1,4 +1,5 @@
 ﻿using FaceGenerator.MachineLearning.Extensions;
+using System.Diagnostics;
 using static FaceGenerator.MachineLearning.Helpers.NullCheckHelper;
 using static FaceGenerator.MachineLearning.Helpers.MathHelper;
 
@@ -26,9 +27,19 @@ namespace FaceGenerator.MachineLearning.Math
             var rotationProduct = Idedntity(N);
             double absMax;
 
+            long absMaxTime = 0;
+            long otherTime = 0;
+            Stopwatch timer = new Stopwatch();
+
             do
             {
+                timer.Start();
                 (int m, int k) = AbsMaxPosition(triangle);
+                absMaxTime += timer.ElapsedTicks;
+                timer.Stop();
+                timer.Reset();
+
+                timer.Start();
                 double xkk = triangle[k][k];
                 double xmk = triangle[m][k];
                 double xmm = triangle[m][m];
@@ -38,11 +49,7 @@ namespace FaceGenerator.MachineLearning.Math
 
                 for (int i = 0; i < k; i++)
                 {
-                    double xki = triangle[k][i];
-                    double xmi = triangle[m][i];
-
-                    triangle[k][i] = xki * cosFi + xmi * sinFi;
-                    triangle[m][i] = -xki * sinFi + xmi * cosFi;
+                    Rotate(triangle, k, i, m, i, cosFi, sinFi);
                 }
 
                 triangle[k][k] = xkk * cosFi * cosFi +
@@ -52,32 +59,24 @@ namespace FaceGenerator.MachineLearning.Math
                 
                 for (int i = k + 1; i < m; i++)
                 {
-                    double xik = triangle[i][k];
-                    double xmi = triangle[m][i];
-
-                    triangle[i][k] = xik * cosFi + xmi * sinFi;
-                    triangle[m][i] = -xik * sinFi + xmi * cosFi;
+                    Rotate(triangle, i, k, m, i, cosFi, sinFi);
                 }
 
                 triangle[m][m] = xkk + xmm - triangle[k][k];
                 
                 for (int i = m + 1; i < N; i++)
                 {
-                    double xik = triangle[i][k];
-                    double xim = triangle[i][m];
-
-                    triangle[i][k] = xik * cosFi + xim * sinFi;
-                    triangle[i][m] = -xik * sinFi + xim * cosFi;
+                    Rotate(triangle, i, k, i, m, cosFi, sinFi);
                 }
 
                 for (int i = 0; i < N; i++)
                 {
-                    double rik = rotationProduct[i][k];
-                    double rim = rotationProduct[i][m];
-
-                    rotationProduct[i][k] = rik * cosFi + rim * sinFi;
-                    rotationProduct[i][m] = -rik * sinFi + rim * cosFi;
+                    Rotate(rotationProduct, i, k, i, m, cosFi, sinFi);
                 }
+
+                otherTime += timer.ElapsedTicks;
+                timer.Stop();
+                timer.Reset();
             }
             while (absMax > 1E-02);
 
@@ -127,6 +126,15 @@ namespace FaceGenerator.MachineLearning.Math
             }
 
             return (maxI, maxJ);
+        }
+
+        private void Rotate(double[][] matrix, int ki, int kj, int mi, int mj, double cosFi, double sinFi)
+        {
+            double xk = matrix[ki][kj];
+            double xm = matrix[mi][mj];
+
+            matrix[ki][kj] = xk * cosFi + xm * sinFi;
+            matrix[mi][mj] = -xk * sinFi + xm * cosFi;
         }
     }
 }

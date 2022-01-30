@@ -155,7 +155,7 @@ namespace FaceGenerator
 
         private static void EigenTest()
         {
-            var matrix = GenerateMatrix(100, 10);
+            var matrix = GenerateMatrix(256, 10);
 
             var eigenResult = matrix.EigenDecomposition();
             var eigenValues = eigenResult.Item1;
